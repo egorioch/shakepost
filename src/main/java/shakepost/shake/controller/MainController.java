@@ -1,69 +1,61 @@
 package shakepost.shake.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import shakepost.shake.exceptions.NotFoundException;
+import shakepost.shake.domain.Message;
+import shakepost.shake.domain.Views;
+import shakepost.shake.repo.MessageRepo;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("message")
 public class MainController {
-    private int count = 4;
-    ArrayList<HashMap<String, String>> messages = new ArrayList<>() {{
-        add(new HashMap<>() {{
-            put("id", "1");
-            put("text", "Spring");
-        }});
-        add(new HashMap<>() {{
-            put("id", "2");
-            put("text", "is");
-        }});
-        add(new HashMap<>() {{
-            put("id", "3");
-            put("text", "wonderful");
-        }});
-    }};
+    private final MessageRepo messageRepo;
+
+    @Autowired
+    MainController(MessageRepo messageRepo) {
+        this.messageRepo = messageRepo;
+    }
 
     @GetMapping
-    public ArrayList<HashMap<String, String>> list() {
-        return messages;
+    @JsonView(Views.IdName.class)
+    public List<Message> list() {
+        return messageRepo.findAll();
     }
 
+    @JsonView(Views.FullName.class)
     @GetMapping("{id}")
-    public HashMap<String, String> getOne(@PathVariable String id) {
-        return getMessage(id);
-    }
-
-    private HashMap<String, String> getMessage(String id) {
-        return messages.stream()
-                .filter(message -> message.get("id").equals(id))
-                .findFirst().orElseThrow(NotFoundException::new);
+    public Message getOne(@PathVariable("id") Message message) {
+        return message;
     }
 
     @PostMapping
-    public HashMap<String, String> createMessage(@RequestBody HashMap<String, String> newMessage) {
-        newMessage.put("id", String.valueOf(count++));
-        messages.add(newMessage);
-        System.out.println("сохранили сообщение: " + newMessage.get("id"));
+    public Message createMessage(@RequestBody Message newMessage) {
+        newMessage.setCreationDate(LocalDateTime.now());
+        messageRepo.save(newMessage);
+        System.out.println("сохранили сообщение: " + newMessage);
 
         return newMessage;
     }
 
     @PutMapping("{id}")
-    public HashMap<String, String> changeMessage(@PathVariable String id, @RequestBody HashMap<String, String> message) {
-        HashMap<String, String> messageFromDb = getMessage(id);
-        messageFromDb.putAll(message);
+    public Message changeMessage(@PathVariable("id") Message messageFromDb, @RequestBody Message message) {
+        //копируем в объект из БД, все свойства, кроме id
+        BeanUtils.copyProperties(message, messageFromDb, "id");
+        messageRepo.save(messageFromDb);
 
-        messageFromDb.put("id", id);
-        System.out.println("изменили сообщение: " + messageFromDb.get("id"));
+        System.out.println("изменили сообщение: " + messageFromDb);
         return messageFromDb;
     }
 
     @DeleteMapping("{id}")
-    public void deleteMessage(@PathVariable int id) {
-        System.out.println("Удалили с id: " + id);
-        messages.remove(getMessage(String.valueOf(id)));
+    public void deleteMessage(@PathVariable("id") Message message) {
+        System.out.println("Удалили с id: " + message);
+        messageRepo.delete(message);
     }
 
 }
