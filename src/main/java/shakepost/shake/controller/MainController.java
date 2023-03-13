@@ -27,8 +27,10 @@ public class MainController {
     public String startPage(Model model, @AuthenticationPrincipal User user) {
         HashMap<String, Object> frontendData = new HashMap<>();
 
-        frontendData.put("profile", user);
-        frontendData.put("messages", messageRepo.findAll());
+        if (user!=null) {
+            frontendData.put("profile", user);
+            frontendData.put("messages", messageRepo.findAll());
+        }
 
         model.addAttribute("frontendData", frontendData);
         model.addAttribute("isDevMode", "dev".equals(profile));

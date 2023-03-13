@@ -10,6 +10,7 @@ let stompClient = null;
 export function connect() {
   let socket = new SockJS('/message-socket');
   stompClient = Stomp.over(socket);
+  stompClient.debug = () => {}
   stompClient.connect({}, frame => {
     console.log('Connected: ' + frame);
     //подписываемся на пункт назначения
