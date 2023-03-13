@@ -3,6 +3,8 @@ package shakepost.shake.controller;
 import com.fasterxml.jackson.annotation.JsonView;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.web.bind.annotation.*;
 import shakepost.shake.domain.Message;
 import shakepost.shake.domain.Views;
@@ -56,6 +58,12 @@ public class MessageController {
     public void deleteMessage(@PathVariable("id") Message message) {
         System.out.println("Удалили с id: " + message);
         messageRepo.delete(message);
+    }
+
+    @MessageMapping("/changeMessage")
+    @SendTo("/topic/activity")
+    public Message sendMessage(Message message) throws Exception {
+        return messageRepo.save(message);
     }
 
 }
